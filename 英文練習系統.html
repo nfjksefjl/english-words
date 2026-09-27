@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>極簡英語單字系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+
+    <!-- 1. 首頁 (Home View) -->
+    <div id="homeView" class="max-w-5xl mx-auto p-6">
+        <div class="text-center py-10">
+            <h1 class="text-4xl font-extrabold text-blue-900 mb-4">英語學習系統</h1>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <!-- 功能 1：單字表 -->
+            <div onclick="switchView('dictionary')" class="bg-white p-6 rounded-xl shadow-md border hover:shadow-lg transition cursor-pointer flex flex-col items-center text-center group">
+                <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl font-bold mb-4 group-hover:bg-blue-600 group-hover:text-white transition">
+                    📖
+                </div>
+                <h2 class="text-xl font-bold mb-2">單字表</h2>
+                <p class="text-sm text-gray-500">瀏覽 Level 1-6 的完整單字庫與 A-Z 搜尋。</p>
+            </div>
+
+            <!-- 功能 2：練單字 -->
+            <div onclick="switchView('quizSetup')" class="bg-white p-6 rounded-xl shadow-md border hover:shadow-lg transition cursor-pointer flex flex-col items-center text-center group">
+                <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-2xl font-bold mb-4 group-hover:bg-green-600 group-hover:text-white transition">
+                    ✏️
+                </div>
+                <h2 class="text-xl font-bold mb-2">練單字</h2>
+                <p class="text-sm text-gray-500">自訂難度與範圍，進行 50 題四選一測驗。</p>
+            </div>
+
+            <!-- 功能 3：錯題本 -->
+            <div onclick="showQuizHistory()" class="bg-white p-6 rounded-xl shadow-md border hover:shadow-lg transition cursor-pointer flex flex-col items-center text-center group">
+                <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-2xl font-bold mb-4 group-hover:bg-red-600 group-hover:text-white transition">
+                    📝
+                </div>
+                <h2 class="text-xl font-bold mb-2">測驗紀錄</h2>
+                <p class="text-sm text-gray-500">查看最近 30 次測驗成績與錯字紀錄。</p>
+            </div>
+
+            <!-- 功能 4：未來新功能 -->
+            <div onclick="showMistakeSummary()" class="bg-white p-6 rounded-xl shadow-md border hover:shadow-lg transition cursor-pointer flex flex-col items-center text-center group">
+                <div class="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-2xl font-bold mb-4 group-hover:bg-yellow-600 group-hover:text-white transition">
+                    📚
+                </div>
+                <h2 class="text-xl font-bold mb-2">錯誤單字整理</h2>
+                <p class="text-sm text-gray-500">統整曾經錯過的單字，依等級與字母分類。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 單字表頁面 (Dictionary View) -->
+    <div id="dictionaryView" class="max-w-4xl mx-auto p-4 hidden">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 border-b pb-4">
+            <div class="flex items-center gap-4">
+                <button onclick="switchView('home')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition flex items-center gap-1">
+                    🏠 返回首頁
+                </button>
+                <h1 class="text-2xl font-bold text-blue-900">單字庫 (Level 1-6)</h1>
+            </div>
+            <input type="text" id="searchInput" placeholder="輸入英文或中文搜尋..." 
+                   class="w-full md:w-1/2 p-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <div class="flex flex-wrap gap-2 mb-4" id="levelContainer"></div>
+        <div class="flex flex-wrap gap-2 mb-6" id="alphabetContainer"></div>
+
+        <div id="wordList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+    <!-- 3. 練單字設定頁面 (Quiz Setup View) -->
+    <div id="quizSetupView" class="max-w-2xl mx-auto p-6 hidden">
+        <div class="flex items-center gap-4 mb-6 border-b pb-4">
+            <button onclick="switchView('home')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition">
+                🏠 返回首頁
+            </button>
+            <h1 class="text-2xl font-bold text-blue-900">測驗設定</h1>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-md border space-y-6">
+            <div>
+                <label class="block font-bold text-gray-700 mb-2">1. 選擇難度：</label>
+                <select id="quizLevelSelect" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="all">所有難度 (Level 1-6)</option>
+                    <option value="1">Level 1</option>
+                    <option value="2">Level 2</option>
+                    <option value="3">Level 3</option>
+                    <option value="4">Level 4</option>
+                    <option value="5">Level 5</option>
+                    <option value="6">Level 6</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-bold text-gray-700 mb-2">2. 選擇單字範圍：</label>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-2">
+                        <input type="radio" name="rangeType" value="all" checked onclick="toggleAlphabetSelect(false)" class="text-blue-600">
+                        <span>考選擇難度下的所有單字 (包含 A-Z)</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="radio" name="rangeType" value="letter" onclick="toggleAlphabetSelect(true)" class="text-blue-600">
+                        <span>指定特定開頭字母 (A-Z)</span>
+                    </label>
+                </div>
+                <div id="letterSelectContainer" class="mt-3 hidden">
+                    <select id="quizLetterSelect" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"></select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold text-gray-700 mb-2">3. 選擇測驗模式：</label>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-2">
+                        <input type="radio" name="quizMode" value="zhToEn" checked class="text-blue-600">
+                        <span>模式一：題目為【中文】，選擇【英文】選項</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="radio" name="quizMode" value="enToZh" class="text-blue-600">
+                        <span>模式二：題目為【英文】，選擇【中文】選項</span>
+                    </label>
+                </div>
+            </div>
+
+            <button onclick="startQuiz()" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition shadow">
+                開始測驗 (共 50 題)
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. 進行測驗頁面 (Quiz Play View) -->
+    <div id="quizPlayView" class="max-w-2xl mx-auto p-6 hidden">
+        <div class="flex justify-between items-center mb-4">
+            <span id="quizProgress" class="text-sm font-semibold text-gray-600">題目 1 / 50</span>
+            <button onclick="confirmExitQuiz()" class="text-sm text-red-500 hover:underline">放棄測驗</button>
+        </div>
+
+        <div class="w-full bg-gray-200 rounded-full h-2.5 mb-6">
+            <div id="progressBar" class="bg-green-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <div class="bg-white p-8 rounded-xl shadow-md border text-center mb-6">
+            <span id="questionTypeTag" class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-semibold">模式</span>
+            <h2 id="questionText" class="text-3xl font-bold text-gray-800 my-6">題目名稱</h2>
+            <div id="optionsContainer" class="grid grid-cols-1 gap-3"></div>
+        </div>
+    </div>
+
+    <!-- 5. 測驗結果頁面 (Quiz Result View) -->
+    <div id="quizResultView" class="max-w-md mx-auto p-6 text-center hidden">
+        <div class="bg-white p-8 rounded-xl shadow-md border">
+            <div class="text-5xl mb-4">🎉</div>
+            <h2 class="text-2xl font-bold mb-2">測驗完成！</h2>
+            <p class="text-gray-600 mb-6">這是你的測驗結果：</p>
+
+            <div class="bg-gray-50 p-4 rounded-lg mb-6 space-y-2">
+                <div class="text-lg">得分：<span id="finalScore" class="font-bold text-2xl text-blue-600">0</span> / 100</div>
+                <div class="text-sm text-gray-500">答對題數：<span id="correctCount">0</span> / <span id="totalQuestionsCount">50</span> 題</div>
+                <div class="text-sm text-gray-500">錯題數：<span id="wrongWordsCount">0</span> 題</div>
+            </div>
+
+            <div id="quizWrongWordPanel" class="hidden bg-gray-50 p-4 rounded-lg mb-6 text-left">
+                <h3 class="font-bold text-gray-700 mb-2">本次錯題</h3>
+                <div id="quizWrongWordList" class="space-y-2"></div>
+            </div>
+
+            <div class="flex gap-4">
+                <button onclick="showQuizHistory()" class="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition">
+                    看測驗紀錄
+                </button>
+                <button onclick="switchView('quizSetup')" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition">
+                    再測一次
+                </button>
+            </div>
+
+            <div class="mt-4">
+                <button onclick="switchView('home')" class="w-full py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition">
+                    返回首頁
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. 測驗紀錄 -->
+    <div id="quizHistoryView" class="max-w-4xl mx-auto p-6 hidden">
+        <div class="flex items-center gap-4 mb-6 border-b pb-4">
+            <button onclick="switchView('home')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition">
+                🏠 返回首頁
+            </button>
+            <h1 class="text-2xl font-bold text-blue-900">測驗紀錄</h1>
+        </div>
+
+        <div id="emptyQuizHistory" class="hidden bg-white p-8 rounded-xl shadow-md border text-center text-gray-500">
+            目前還沒有測驗紀錄，先練一輪單字吧！
+        </div>
+
+        <div id="quizHistoryList" class="space-y-4"></div>
+    </div>
+
+    <!-- 7. 錯誤單字整理 -->
+    <div id="mistakeSummaryView" class="max-w-4xl mx-auto p-6 hidden">
+        <div class="flex items-center gap-4 mb-6 border-b pb-4">
+            <button onclick="switchView('home')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition">
+                🏠 返回首頁
+            </button>
+            <h1 class="text-2xl font-bold text-blue-900">錯誤單字整理</h1>
+        </div>
+
+        <div class="mb-6 bg-white p-4 rounded-xl shadow-sm border">
+            <div class="flex flex-col md:flex-row gap-4">
+                <label class="flex-1">
+                    <span class="block text-sm text-gray-600 mb-1">等級</span>
+                    <select id="mistakeSummaryLevelFilter" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="all">全部等級</option>
+                    </select>
+                </label>
+
+                <label class="flex-1">
+                    <span class="block text-sm text-gray-600 mb-1">字母開頭</span>
+                    <select id="mistakeSummaryLetterFilter" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="all">全部字母</option>
+                    </select>
+                </label>
+
+                <label class="flex-1">
+                    <span class="block text-sm text-gray-600 mb-1">搜尋</span>
+                    <input id="mistakeSummarySearchInput" type="text" placeholder="搜尋英文或中文..." 
+                           class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                </label>
+            </div>
+        </div>
+
+        <div id="emptyMistakeSummary" class="hidden bg-white p-8 rounded-xl shadow-md border text-center text-gray-500">
+            目前還沒有錯誤單字紀錄，先去練一輪單字吧！
+        </div>
+
+        <div id="mistakeSummaryList" class="space-y-4"></div>
+    </div>
+
+    <script src="words.js"></script>
+    <script>
+        // --- 全域常數 ---
+        let currentLevel = 1;
+        let currentLetter = 'A';
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+        const QUIZ_HISTORY_STORAGE_KEY = 'englishQuizHistoryRecords';
+        const MISTAKE_SUMMARY_STORAGE_KEY = 'englishQuizMistakeSummary';
+        const LEGACY_WRONG_WORDS_STORAGE_KEY = 'englishQuizWrongWords';
+
+        // 測驗變數
+        let quizQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let selectedQuizMode = 'zhToEn';
+        let currentQuizWrongWords = [];
+
+        let mistakeSummaryLevelFilterValue = 'all';
+        let mistakeSummaryLetterFilterValue = 'all';
+        let mistakeSummarySearchTerm = '';
+
+        // --- 視圖切換 ---
+        function switchView(viewName) {
+            document.getElementById('homeView').classList.add('hidden');
+            document.getElementById('dictionaryView').classList.add('hidden');
+            document.getElementById('quizSetupView').classList.add('hidden');
+            document.getElementById('quizPlayView').classList.add('hidden');
+            document.getElementById('quizResultView').classList.add('hidden');
+            document.getElementById('quizHistoryView').classList.add('hidden');
+            document.getElementById('mistakeSummaryView').classList.add('hidden');
+
+            if (viewName === 'home') {
+                document.getElementById('homeView').classList.remove('hidden');
+            } else if (viewName === 'dictionary') {
+                document.getElementById('dictionaryView').classList.remove('hidden');
+            } else if (viewName === 'quizSetup') {
+                document.getElementById('quizSetupView').classList.remove('hidden');
+                initQuizSetup();
+            } else if (viewName === 'quizPlay') {
+                document.getElementById('quizPlayView').classList.remove('hidden');
+            } else if (viewName === 'quizResult') {
+                document.getElementById('quizResultView').classList.remove('hidden');
+            } else if (viewName === 'quizHistory') {
+                document.getElementById('quizHistoryView').classList.remove('hidden');
+                renderQuizHistoryList();
+            } else if (viewName === 'mistakeSummary') {
+                document.getElementById('mistakeSummaryView').classList.remove('hidden');
+                renderMistakeSummaryList();
+            }
+        }
+
+        function showQuizHistory() {
+            switchView('quizHistory');
+        }
+
+        function showMistakeSummary() {
+            switchView('mistakeSummary');
+        }
+
+        function showWrongWordsReview() {
+            showQuizHistory();
+        }
+
+        // --- localStorage 讀寫 ---
+        function getQuizHistory() {
+            try {
+                const saved = localStorage.getItem(QUIZ_HISTORY_STORAGE_KEY);
+                const data = saved ? JSON.parse(saved) : [];
+                return Array.isArray(data) ? data : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function saveQuizHistory(list) {
+            localStorage.setItem(QUIZ_HISTORY_STORAGE_KEY, JSON.stringify(list));
+        }
+
+        function getMistakeSummary() {
+            try {
+                const saved = localStorage.getItem(MISTAKE_SUMMARY_STORAGE_KEY);
+                const data = saved ? JSON.parse(saved) : [];
+                return Array.isArray(data) ? data : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function saveMistakeSummary(list) {
+            localStorage.setItem(MISTAKE_SUMMARY_STORAGE_KEY, JSON.stringify(list));
+        }
+
+        function migrateLegacyWrongWords() {
+            const hasNew = localStorage.getItem(MISTAKE_SUMMARY_STORAGE_KEY);
+            if (hasNew) return;
+
+            const legacy = localStorage.getItem(LEGACY_WRONG_WORDS_STORAGE_KEY);
+            if (!legacy) return;
+
+            try {
+                const oldList = JSON.parse(legacy);
+                if (!Array.isArray(oldList)) return;
+
+                const mapped = oldList.map(item => ({
+                    word: item.word,
+                    translation: item.translation || '',
+                    level: item.level || 1,
+                    count: item.count || 1,
+                    firstMistake: item.firstMistake || item.lastMistake || new Date().toISOString(),
+                    lastMistake: item.lastMistake || new Date().toISOString()
+                }));
+
+                saveMistakeSummary(mapped);
+            } catch (error) {
+                console.error('Legacy data migrate failed', error);
+            }
+        }
+
+        // --- 測驗紀錄 ---
+        function recordQuizResult(score, total, wrongWords, meta) {
+            const history = getQuizHistory();
+            const record = {
+                id: Date.now(),
+                date: new Date().toISOString(),
+                score: score,
+                correctCount: score,
+                totalQuestions: total,
+                wrongWords: wrongWords,
+                meta: meta || {}
+            };
+
+            history.unshift(record);
+            saveQuizHistory(history.slice(0, 30));
+        }
+
+        function renderQuizHistoryList() {
+            const history = getQuizHistory().slice(0, 30);
+            const list = document.getElementById('quizHistoryList');
+            const empty = document.getElementById('emptyQuizHistory');
+
+            if (!history.length) {
+                empty.classList.remove('hidden');
+                list.innerHTML = '';
+                return;
+            }
+
+            empty.classList.add('hidden');
+
+            list.innerHTML = history.map((record, index) => {
+                const meta = record.meta || {};
+                const levelText = meta.level === 'all' ? '全部等級' : `Level ${meta.level}`;
+                const letterText = meta.letter === 'all' ? '全部字母' : `字母 ${meta.letter}`;
+
+                const wrongHtml = record.wrongWords && record.wrongWords.length
+                    ? record.wrongWords.map(item => `
+                        <span class="inline-block bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs mr-2 mb-2">
+                            ${item.word} (${item.translation})
+                        </span>
+                    `).join('')
+                    : '<span class="text-gray-500 text-sm">本次沒有錯題</span>';
+
+                return `
+                    <div class="bg-white p-4 rounded-xl border shadow-sm">
+                        <div class="flex justify-between items-start gap-4 mb-3">
+                            <div>
+                                <div class="font-bold text-blue-800">第 ${index + 1} 次測驗</div>
+                                <div class="text-xs text-gray-500">${new Date(record.date).toLocaleString('zh-TW')}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-bold text-blue-600">${record.score} 分</div>
+                                <div class="text-xs text-gray-500">${record.correctCount} / ${record.totalQuestions} 答對</div>
+                            </div>
+                        </div>
+
+                        <div class="text-xs text-gray-600 mb-3">
+                            ${meta.mode === 'zhToEn' ? '中文 → 英文' : '英文 → 中文'} · ${levelText} · ${letterText}
+                        </div>
+
+                        <div class="flex flex-wrap">
+                            ${wrongHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --- 錯誤單字整理 ---
+        function initMistakeSummaryFilters() {
+            const levelFilter = document.getElementById('mistakeSummaryLevelFilter');
+            const letterFilter = document.getElementById('mistakeSummaryLetterFilter');
+            const searchInput = document.getElementById('mistakeSummarySearchInput');
+
+            levelFilter.innerHTML = '<option value="all">全部等級</option>' +
+                Array.from({ length: 6 }, (_, i) => `<option value="${i + 1}">Level ${i + 1}</option>`).join('');
+
+            letterFilter.innerHTML = '<option value="all">全部字母</option>' +
+                alphabet.map(letter => `<option value="${letter}">${letter}</option>`).join('');
+
+            levelFilter.value = mistakeSummaryLevelFilterValue;
+            letterFilter.value = mistakeSummaryLetterFilterValue;
+            searchInput.value = mistakeSummarySearchTerm;
+
+            levelFilter.onchange = (e) => {
+                mistakeSummaryLevelFilterValue = e.target.value;
+                renderMistakeSummaryList();
+            };
+
+            letterFilter.onchange = (e) => {
+                mistakeSummaryLetterFilterValue = e.target.value;
+                renderMistakeSummaryList();
+            };
+
+            searchInput.oninput = (e) => {
+                mistakeSummarySearchTerm = e.target.value.trim().toLowerCase();
+                renderMistakeSummaryList();
+            };
+        }
+
+        function registerWrongWord(wordData) {
+            const summary = getMistakeSummary();
+            const existingIndex = summary.findIndex(item => item.word === wordData.word);
+
+            if (existingIndex >= 0) {
+                summary[existingIndex].count += 1;
+                summary[existingIndex].lastMistake = new Date().toISOString();
+                summary[existingIndex].translation = wordData.translation;
+                summary[existingIndex].level = wordData.level;
+            } else {
+                summary.push({
+                    word: wordData.word,
+                    translation: wordData.translation,
+                    level: wordData.level,
+                    count: 1,
+                    firstMistake: new Date().toISOString(),
+                    lastMistake: new Date().toISOString()
+                });
+            }
+
+            saveMistakeSummary(summary);
+        }
+
+        function renderMistakeSummaryList() {
+            const summary = getMistakeSummary();
+            const list = document.getElementById('mistakeSummaryList');
+            const empty = document.getElementById('emptyMistakeSummary');
+
+            const filtered = summary.filter(item => {
+                const levelMatch = mistakeSummaryLevelFilterValue === 'all' || item.level === Number(mistakeSummaryLevelFilterValue);
+                const firstLetter = item.word.charAt(0).toUpperCase();
+                const letterMatch = mistakeSummaryLetterFilterValue === 'all' || firstLetter === mistakeSummaryLetterFilterValue;
+
+                const searchText = mistakeSummarySearchTerm;
+                const keywordMatch =
+                    !searchText ||
+                    item.word.toLowerCase().includes(searchText) ||
+                    (item.translation || '').toLowerCase().includes(searchText);
+
+                return levelMatch && letterMatch && keywordMatch;
+            });
+
+            if (!filtered.length) {
+                empty.classList.remove('hidden');
+                list.innerHTML = '';
+                return;
+            }
+
+            empty.classList.add('hidden');
+
+            const grouped = {};
+            filtered.forEach(item => {
+                const groupKey = `Level ${item.level} / ${item.word.charAt(0).toUpperCase()}`;
+                if (!grouped[groupKey]) grouped[groupKey] = [];
+                grouped[groupKey].push(item);
+            });
+
+            list.innerHTML = Object.entries(grouped)
+                .sort(([a], [b]) => a.localeCompare(b, 'zh-TW'))
+                .map(([groupKey, items]) => `
+                    <div class="bg-white p-4 rounded-xl border shadow-sm">
+                        <h3 class="font-bold text-blue-700 mb-3">${groupKey}</h3>
+                        <div class="space-y-3">
+                            ${items
+                                .sort((a, b) => b.count - a.count)
+                                .map(item => `
+                                    <div class="flex justify-between items-center gap-3 bg-gray-50 p-3 rounded-lg">
+                                        <div>
+                                            <div class="text-lg font-bold text-gray-900">${item.word}</div>
+                                            <div class="text-gray-600">${item.translation}</div>
+                                        </div>
+                                        <span class="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold">
+                                            錯 ${item.count} 次
+                                        </span>
+                                    </div>
+                                `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        // --- 單字表 ---
+        function initDictionary() {
+            renderLevelButtons();
+            renderAlphabetButtons();
+            filterAndRender();
+
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                const keyword = e.target.value.toLowerCase().trim();
+                if (keyword) {
+                    searchWords(keyword);
+                } else {
+                    filterAndRender();
+                }
+            });
+        }
+
+        function renderLevelButtons() {
+            const container = document.getElementById('levelContainer');
+            container.innerHTML = '';
+            for (let i = 1; i <= 6; i++) {
+                const btn = document.createElement('button');
+                btn.textContent = `Level ${i}`;
+                btn.className = `px-4 py-2 rounded font-semibold transition-colors ${currentLevel === i ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 hover:bg-gray-100'}`;
+                btn.onclick = () => {
+                    currentLevel = i;
+                    document.getElementById('searchInput').value = '';
+                    renderLevelButtons();
+                    filterAndRender();
+                };
+                container.appendChild(btn);
+            }
+        }
+
+        function renderAlphabetButtons() {
+            const container = document.getElementById('alphabetContainer');
+            container.innerHTML = '';
+            alphabet.forEach(letter => {
+                const btn = document.createElement('button');
+                btn.textContent = letter;
+                btn.className = `w-8 h-8 rounded flex items-center justify-center font-medium transition-colors ${currentLetter === letter ? 'bg-blue-500 text-white' : 'bg-white border border-gray-300 hover:bg-gray-100'}`;
+                btn.onclick = () => {
+                    currentLetter = letter;
+                    document.getElementById('searchInput').value = '';
+                    renderAlphabetButtons();
+                    filterAndRender();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function filterAndRender() {
+            const filtered = wordsDatabase.filter(item => 
+                item.level === currentLevel && 
+                item.word.toUpperCase().startsWith(currentLetter)
+            );
+            renderCards(filtered);
+        }
+
+        function searchWords(keyword) {
+            const filtered = wordsDatabase.filter(item => 
+                item.word.toLowerCase().includes(keyword) || 
+                item.translation.includes(keyword)
+            );
+            renderCards(filtered);
+        }
+
+        function renderCards(data) {
+            const container = document.getElementById('wordList');
+            container.innerHTML = '';
+            
+            if (data.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 col-span-full text-center py-8">找不到相符的單字</p>';
+                return;
+            }
+
+            data.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h2 class="text-xl font-bold text-gray-900">${item.word}</h2>
+                        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">Level ${item.level}</span>
+                    </div>
+                    <p class="text-gray-700">${item.translation}</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // --- 測驗邏輯 ---
+        function initQuizSetup() {
+            const letterSelect = document.getElementById('quizLetterSelect');
+            letterSelect.innerHTML = '';
+            alphabet.forEach(letter => {
+                const opt = document.createElement('option');
+                opt.value = letter;
+                opt.textContent = `以 ${letter} 開頭的單字`;
+                letterSelect.appendChild(opt);
+            });
+        }
+
+        function toggleAlphabetSelect(show) {
+            const container = document.getElementById('letterSelectContainer');
+            if (show) {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function startQuiz() {
+            const levelVal = document.getElementById('quizLevelSelect').value;
+            const rangeType = document.querySelector('input[name="rangeType\"]:checked').value;
+            const letterVal = document.getElementById('quizLetterSelect').value;
+            selectedQuizMode = document.querySelector('input[name="quizMode\"]:checked').value;
+
+            let pool = wordsDatabase.filter(item => {
+                let matchLevel = (levelVal === 'all') ? true : (item.level === parseInt(levelVal));
+                let matchLetter = (rangeType === 'all') ? true : item.word.toUpperCase().startsWith(letterVal);
+                return matchLevel && matchLetter;
+            });
+
+            if (pool.length === 0) {
+                alert('該條件下沒有可用的單字，請重新設定！');
+                return;
+            }
+
+            pool = shuffleArray([...pool]);
+            const totalQuestions = Math.min(50, pool.length);
+            const selectedWords = pool.slice(0, totalQuestions);
+
+            let previousOptionKey = '';
+
+            quizQuestions = selectedWords.map(targetWord => {
+                let options;
+                let optionKey;
+                let attempts = 0;
+
+                do {
+                    options = buildOptionsForWord(
+                        targetWord,
+                        rangeType,
+                        letterVal,
+                        selectedQuizMode
+                    );
+
+                    optionKey = options
+                        .map(item => item.word)
+                        .sort()
+                        .join('|');
+
+                    attempts++;
+                } while (optionKey === previousOptionKey && attempts < 20);
+
+                previousOptionKey = optionKey;
+
+                return {
+                    target: targetWord,
+                    options
+                };
+            });
+
+            currentQuestionIndex = 0;
+            score = 0;
+            currentQuizWrongWords = [];
+
+            switchView('quizPlay');
+            renderQuestion();
+        }
+
+        function buildOptionsForWord(targetWord, rangeType, letterVal, mode) {
+            const answer = { ...targetWord };
+            const preferredLetter = (rangeType === 'letter')
+                ? (letterVal || answer.word.charAt(0)).toUpperCase()
+                : answer.word.charAt(0).toUpperCase();
+
+            let candidates = wordsDatabase.filter(item =>
+                item.word !== answer.word &&
+                item.word.toUpperCase().startsWith(preferredLetter)
+            );
+
+            if (candidates.length < 3) {
+                candidates = [
+                    ...candidates,
+                    ...wordsDatabase.filter(item =>
+                        item.word !== answer.word &&
+                        item.level === answer.level
+                    )
+                ];
+            }
+
+            candidates = candidates.filter((item, index, arr) =>
+                arr.findIndex(x => x.word === item.word) === index
+            );
+
+            shuffleArray(candidates);
+            const finalOptions = [answer];
+            for (const item of candidates) {
+                if (finalOptions.length >= 4) break;
+                if (item.word !== answer.word && !finalOptions.some(x => x.word === item.word)) {
+                    finalOptions.push(item);
+                }
+            }
+
+            while (finalOptions.length < 4) {
+                const fallback = wordsDatabase.find(item =>
+                    item.word !== answer.word &&
+                    !finalOptions.some(x => x.word === item.word)
+                );
+                if (!fallback) break;
+                finalOptions.push(fallback);
+            }
+
+            return shuffleArray(finalOptions);
+        }
+
+        function renderQuestion() {
+            const q = quizQuestions[currentQuestionIndex];
+            const total = quizQuestions.length;
+
+            document.getElementById('quizProgress').textContent = `題目 ${currentQuestionIndex + 1} / ${total}`;
+            document.getElementById('progressBar').style.width = `${((currentQuestionIndex + 1) / total) * 100}%`;
+
+            const tag = document.getElementById('questionTypeTag');
+            const qText = document.getElementById('questionText');
+
+            if (selectedQuizMode === 'zhToEn') {
+                tag.textContent = '模式一：看中文選英文';
+                qText.textContent = q.target.translation;
+            } else {
+                tag.textContent = '模式二：看英文選中文';
+                qText.textContent = q.target.word;
+            }
+
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full py-3 px-4 border border-gray-300 rounded-lg text-lg font-medium hover:bg-blue-50 transition text-left flex justify-between items-center';
+                btn.textContent = (selectedQuizMode === 'zhToEn') ? opt.word : opt.translation;
+
+                btn.onclick = () => handleAnswer(btn, opt, q.target);
+                container.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(btnElement, selectedOpt, targetOpt) {
+            const buttons = document.querySelectorAll('#optionsContainer button');
+            buttons.forEach(b => b.disabled = true);
+
+            const isCorrect = isCorrectOption(selectedOpt, targetOpt, selectedQuizMode);
+
+            if (isCorrect) {
+                btnElement.classList.add('bg-green-100', 'border-green-500', 'text-green-800');
+                score++;
+            } else {
+                btnElement.classList.add('bg-red-100', 'border-red-500', 'text-red-800');
+
+                const wrongEntry = {
+                    word: targetOpt.word,
+                    translation: targetOpt.translation,
+                    level: targetOpt.level
+                };
+
+                currentQuizWrongWords.push(wrongEntry);
+                registerWrongWord(wrongEntry);
+
+                buttons.forEach(b => {
+                    const expectedText = (selectedQuizMode === 'zhToEn') ? targetOpt.word : targetOpt.translation;
+                    if (b.textContent === expectedText) {
+                        b.classList.add('bg-green-100', 'border-green-500', 'text-green-800');
+                    }
+                });
+            }
+
+            setTimeout(() => {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < quizQuestions.length) {
+                    renderQuestion();
+                } else {
+                    showResult();
+                }
+            }, 1000);
+        }
+
+        function isCorrectOption(selectedOpt, targetOpt, mode) {
+            if (mode === 'zhToEn') {
+                return selectedOpt.word === targetOpt.word;
+            }
+            return selectedOpt.translation === targetOpt.translation;
+        }
+
+        function showResult() {
+            const total = quizQuestions.length;
+            const finalScoreVal = Math.round((score / total) * 100);
+
+            const uniqueWrongWords = [];
+            const seen = new Set();
+
+            currentQuizWrongWords.forEach(item => {
+                if (!seen.has(item.word)) {
+                    seen.add(item.word);
+                    uniqueWrongWords.push(item);
+                }
+            });
+
+            const levelVal = document.getElementById('quizLevelSelect').value;
+            const rangeType = document.querySelector('input[name="rangeType\"]:checked').value;
+            const letterVal = document.getElementById('quizLetterSelect').value;
+
+            recordQuizResult(finalScoreVal, total, uniqueWrongWords, {
+                mode: selectedQuizMode,
+                level: levelVal,
+                letter: rangeType === 'letter' ? letterVal : 'all'
+            });
+
+            document.getElementById('finalScore').textContent = finalScoreVal;
+            document.getElementById('correctCount').textContent = score;
+            document.getElementById('totalQuestionsCount').textContent = total;
+            document.getElementById('wrongWordsCount').textContent = uniqueWrongWords.length;
+
+            const panel = document.getElementById('quizWrongWordPanel');
+            const list = document.getElementById('quizWrongWordList');
+
+            if (uniqueWrongWords.length > 0) {
+                list.innerHTML = uniqueWrongWords.map(item => `
+                    <div class="flex justify-between items-center bg-white rounded-lg p-2 border">
+                        <div>
+                            <div class="font-semibold">${item.word}</div>
+                            <div class="text-xs text-gray-500">${item.translation}</div>
+                        </div>
+                        <span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">Level ${item.level}</span>
+                    </div>
+                `).join('');
+                panel.classList.remove('hidden');
+            } else {
+                list.innerHTML = '<div class="text-sm text-gray-500">本次測驗沒有錯題，表現很棒！</div>';
+                panel.classList.remove('hidden');
+            }
+
+            switchView('quizResult');
+        }
+
+        function confirmExitQuiz() {
+            if (confirm('確定要放棄目前的測驗並返回首頁嗎？')) {
+                switchView('home');
+            }
+        }
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        window.onload = () => {
+            migrateLegacyWrongWords();
+            initDictionary();
+            initQuizSetup();
+            initMistakeSummaryFilters();
+            renderQuizHistoryList();
+            renderMistakeSummaryList();
+        };
+    </script>
+</body>
+</html>
