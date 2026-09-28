@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>極簡英語單字系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+
+    <!-- 1. 首頁 (Home View) -->
+    <div id="homeView" class="max-w-5xl mx-auto p-6">
+        <div class="text-center py-10">
+            <h1 class="text-4xl font-extrabold text-blue-900 mb-4">英語學習系統</h1>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <!-- 功能 1：單字表 -->
+            <div onclick="switchView('dictionary')" class="bg-white p-6 rounded-xl shadow-md border hover:shadow-lg transition cursor-pointer flex flex-col items-center text-center group">
+                <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl font-bold mb-4 group-hover:bg-blue-600 group-hover:text-white transition">
+                    📖
+                </div>
+                <h2 class="text-xl font-bold mb-2">單字表</h2>
+                <p class="text-sm text-gray-500">瀏覽 Level 1-6 的完整單字庫與 A-Z 搜尋。</p>
+            </div>
+
+            <!-- 功能 2：練單字 -->
+            <div onclick="switchView('quizSetup')" class="bg-white p-6 rounded-xl shadow-md border hover:shadow-lg transition cursor-pointer flex flex-col items-center text-center group">
+                <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-2xl font-bold mb-4 group-hover:bg-green-600 group-hover:text-white transition">
+                    ✏️
+                </div>
+                <h2 class="text-xl font-bold mb-2">練單字</h2>
+                <p class="text-sm text-gray-500">自訂難度與範圍，進行 50 題四選一測驗。</p>
+            </div>
+
+            <!-- 功能 3：錯題本 -->
+            <div onclick="showQuizHistory()" class="bg-white p-6 rounded-xl shadow-md border hover:shadow-lg transition cursor-pointer flex flex-col items-center text-center group">
+                <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-2xl font-bold mb-4 group-hover:bg-red-600 group-hover:text-white transition">
+                    📝
+                </div>
+                <h2 class="text-xl font-bold mb-2">測驗紀錄</h2>
+                <p class="text-sm text-gray-500">查看最近 30 次測驗成績與錯字紀錄。</p>
+            </div>
+
+            <!-- 功能 4：錯誤單字整理 -->
+            <div onclick="showMistakeSummary()" class="bg-white p-6 rounded-xl shadow-md border hover:shadow-lg transition cursor-pointer flex flex-col items-center text-center group">
+                <div class="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-2xl font-bold mb-4 group-hover:bg-yellow-600 group-hover:text-white transition">
+                    📚
+                </div>
+                <h2 class="text-xl font-bold mb-2">錯誤單字整理</h2>
+                <p class="text-sm text-gray-500">統整曾經錯過的單字，依等級與字母分類。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 單字表頁面 (Dictionary View) -->
+    <div id="dictionaryView" class="max-w-4xl mx-auto p-4 hidden">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 border-b pb-4">
+            <div class="flex items-center gap-4">
+                <button onclick="switchView('home')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition flex items-center gap-1">
+                    🏠 返回首頁
+                </button>
+                <h1 class="text-2xl font-bold text-blue-900">單字庫 (Level 1-6)</h1>
+            </div>
+            <input type="text" id="searchInput" placeholder="輸入英文或中文搜尋..." 
+                   class="w-full md:w-1/2 p-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <div class="flex flex-wrap gap-2 mb-4" id="levelContainer"></div>
+        <div class="flex flex-wrap gap-2 mb-6" id="alphabetContainer"></div>
+
+        <div id="wordList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+    <!-- 3. 練單字設定頁面 (Quiz Setup View) -->
+    <div id="quizSetupView" class="max-w-2xl mx-auto p-6 hidden">
+        <div class="flex items-center gap-4 mb-6 border-b pb-4">
+            <button onclick="switchView('home')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition">
+                🏠 返回首頁
+            </button>
+            <h1 class="text-2xl font-bold text-blue-900">測驗設定</h1>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-md border space-y-6">
+            <div>
+                <label class="block font-bold text-gray-700 mb-2">1. 選擇難度範圍：</label>
+                <button id="quizLevelToggle" type="button" aria-expanded="false" aria-controls="quizLevelSelect" onclick="toggleQuizLevelOptions()" class="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left font-bold text-gray-700 hover:bg-gray-50">
+                    <span>選擇難度</span><span aria-hidden="true">⌄</span>
+                </button>
+                <div id="quizLevelSelect" class="hidden mt-3 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2">
+                    <label class="flex items-center gap-2 py-1"><input type="checkbox" name="quizLevel" value="all" checked onchange="updateQuizSelection('quizLevel', this.value)" class="text-blue-600"><span>所有難度</span></label>
+                    <label class="flex items-center gap-2 py-1"><input type="checkbox" name="quizLevel" value="1" onchange="updateQuizSelection('quizLevel', this.value)" class="text-blue-600"><span>Level 1</span></label>
+                    <label class="flex items-center gap-2 py-1"><input type="checkbox" name="quizLevel" value="2" onchange="updateQuizSelection('quizLevel', this.value)" class="text-blue-600"><span>Level 2</span></label>
+                    <label class="flex items-center gap-2 py-1"><input type="checkbox" name="quizLevel" value="3" onchange="updateQuizSelection('quizLevel', this.value)" class="text-blue-600"><span>Level 3</span></label>
+                    <label class="flex items-center gap-2 py-1"><input type="checkbox" name="quizLevel" value="4" onchange="updateQuizSelection('quizLevel', this.value)" class="text-blue-600"><span>Level 4</span></label>
+                    <label class="flex items-center gap-2 py-1"><input type="checkbox" name="quizLevel" value="5" onchange="updateQuizSelection('quizLevel', this.value)" class="text-blue-600"><span>Level 5</span></label>
+                    <label class="flex items-center gap-2 py-1"><input type="checkbox" name="quizLevel" value="6" onchange="updateQuizSelection('quizLevel', this.value)" class="text-blue-600"><span>Level 6</span></label>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold text-gray-700 mb-2">2. 選擇字母範圍：</label>
+                <button id="quizLetterToggle" type="button" aria-expanded="false" aria-controls="quizLetterSelect" onclick="toggleQuizLetterOptions()" class="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left font-bold text-gray-700 hover:bg-gray-50">
+                    <span>選擇字母</span><span aria-hidden="true">⌄</span>
+                </button>
+                <div id="quizLetterSelect" class="hidden mt-3 grid grid-cols-4 sm:grid-cols-7 gap-x-3 gap-y-1"></div>
+            </div>
+
+            <div>
+                <label class="block font-bold text-gray-700 mb-2">3. 選擇測驗模式：</label>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-2">
+                        <input type="radio" name="quizMode" value="zhToEn" checked class="text-blue-600">
+                        <span>模式一：題目為【中文】，選擇【英文】選項</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="radio" name="quizMode" value="enToZh" class="text-blue-600">
+                        <span>模式二：題目為【英文】，選擇【中文】選項</span>
+                    </label>
+                </div>
+            </div>
+
+            <button onclick="startQuiz()" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition shadow">
+                開始測驗 (共 50 題)
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. 進行測驗頁面 (Quiz Play View) -->
+    <div id="quizPlayView" class="max-w-2xl mx-auto p-6 hidden">
+        <div class="flex justify-between items-center mb-4">
+            <span id="quizProgress" class="text-sm font-semibold text-gray-600">題目 1 / 50</span>
+            <button onclick="confirmExitQuiz()" class="text-sm text-red-500 hover:underline">放棄測驗</button>
+        </div>
+
+        <div class="w-full bg-gray-200 rounded-full h-2.5 mb-6">
+            <div id="progressBar" class="bg-green-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <div class="bg-white p-8 rounded-xl shadow-md border text-center mb-6">
+            <span id="questionTypeTag" class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-semibold">模式</span>
+            <h2 id="questionText" class="text-3xl font-bold text-gray-800 my-6">題目名稱</h2>
+            <div id="optionsContainer" class="grid grid-cols-1 gap-3"></div>
+            <div class="mt-4 flex justify-end">
+                <button id="nextQuestionButton" onclick="goToNextQuestion()" class="hidden rounded-lg bg-blue-600 px-5 py-2 font-semibold text-white hover:bg-blue-700">下一題</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. 測驗結果頁面 (Quiz Result View) -->
+    <div id="quizResultView" class="max-w-md mx-auto p-6 text-center hidden">
+        <div class="bg-white p-8 rounded-xl shadow-md border">
+            <div class="text-5xl mb-4">🎉</div>
+            <h2 class="text-2xl font-bold mb-2">測驗完成！</h2>
+            <p class="text-gray-600 mb-6">這是你的測驗結果：</p>
+
+            <div class="bg-gray-50 p-4 rounded-lg mb-6 space-y-2">
+                <div class="text-lg">得分：<span id="finalScore" class="font-bold text-2xl text-blue-600">0</span> / 100</div>
+                <div class="text-sm text-gray-500">答對題數：<span id="correctCount">0</span> / <span id="totalQuestionsCount">50</span> 題</div>
+                <div class="text-sm text-gray-500">錯題數：<span id="wrongWordsCount">0</span> 題</div>
+            </div>
+
+            <div id="quizWrongWordPanel" class="hidden bg-gray-50 p-4 rounded-lg mb-6 text-left">
+                <h3 class="font-bold text-gray-700 mb-2">本次錯題</h3>
+                <div id="quizWrongWordList" class="space-y-2"></div>
+            </div>
+
+            <div class="flex gap-4">
+                <button onclick="showQuizHistory()" class="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition">
+                    看測驗紀錄
+                </button>
+                <button onclick="switchView('quizSetup')" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition">
+                    再測一次
+                </button>
+            </div>
+
+            <div class="mt-4">
+                <button onclick="switchView('home')" class="w-full py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition">
+                    返回首頁
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. 測驗紀錄 -->
+    <div id="quizHistoryView" class="max-w-4xl mx-auto p-6 hidden">
+        <div class="flex items-center gap-4 mb-6 border-b pb-4">
+            <button onclick="switchView('home')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition">
+                🏠 返回首頁
+            </button>
+            <h1 class="text-2xl font-bold text-blue-900">測驗紀錄</h1>
+        </div>
+
+        <div id="emptyQuizHistory" class="hidden bg-white p-8 rounded-xl shadow-md border text-center text-gray-500">
+            目前還沒有測驗紀錄，先練一輪單字吧！
+        </div>
+
+        <div id="quizHistoryList" class="space-y-4"></div>
+    </div>
+
+    <!-- 7. 錯誤單字整理 -->
+    <div id="mistakeSummaryView" class="max-w-4xl mx-auto p-6 hidden">
+        <div class="flex items-center gap-4 mb-6 border-b pb-4">
+            <button onclick="switchView('home')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition">
+                🏠 返回首頁
+            </button>
+            <h1 class="text-2xl font-bold text-blue-900">錯誤單字整理</h1>
+        </div>
+
+        <div class="mb-6 bg-white p-4 rounded-xl shadow-sm border">
+            <div class="flex flex-col md:flex-row gap-4">
+                <label class="flex-1">
+                    <span class="block text-sm text-gray-600 mb-1">等級</span>
+                    <select id="mistakeSummaryLevelFilter" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="all">全部等級</option>
+                    </select>
+                </label>
+
+                <label class="flex-1">
+                    <span class="block text-sm text-gray-600 mb-1">字母開頭</span>
+                    <select id="mistakeSummaryLetterFilter" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="all">全部字母</option>
+                    </select>
+                </label>
+
+                <label class="flex-1">
+                    <span class="block text-sm text-gray-600 mb-1">搜尋</span>
+                    <input id="mistakeSummarySearchInput" type="text" placeholder="搜尋英文或中文..." 
+                           class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                </label>
+            </div>
+        </div>
+
+        <div id="emptyMistakeSummary" class="hidden bg-white p-8 rounded-xl shadow-md border text-center text-gray-500">
+            目前還沒有錯誤單字紀錄，先去練一輪單字吧！
+        </div>
+
+        <div id="mistakeSummaryList" class="space-y-4"></div>
+    </div>
+
+    <!-- 引入模組 JS 檔案 -->
+    <script src="words.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/dictionary.js"></script>
+    <script src="js/quiz.js"></script>
+    <script src="js/history.js"></script>
+    <script src="js/mistakes.js"></script>
+</body>
+</html>
